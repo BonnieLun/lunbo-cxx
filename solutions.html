@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>题解中心 · 伦博教育C++编程</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<main class="section page-top">
+  <h2 class="section-title">📖 题解中心 <span class="title-en">SOLUTIONS VAULT</span></h2>
+  <p class="section-sub">全部 1000 道编程实战题的标准 C++ 题解与思路点拨。<b style="color:var(--yellow)">建议先自己动手 AC，再来对答案</b>——看懂 ≠ 会写！</p>
+
+  <div class="gym-hud">
+    <div class="hud-item">📚 题解总数 <b id="sol-total">0</b></div>
+    <div class="hud-item">✅ 你已 AC <b id="sol-ac">0</b></div>
+    <div class="hud-item">🔓 已查看题解 <b id="sol-viewed">0</b></div>
+    <div class="hud-bar"><div class="hud-bar-fill" id="sol-bar"></div></div>
+  </div>
+
+  <div class="oj-cats" id="sol-cats"></div>
+
+  <div class="oj-toolbar">
+    <input class="search-input" id="sol-search" placeholder="🔎 搜索题号或题名，如 k10 / 背包 …">
+    <select id="sol-diff">
+      <option value="">全部难度</option>
+      <option value="1">⭐ 入门</option><option value="2">⭐⭐ 基础</option>
+      <option value="3">⭐⭐⭐ 提高</option><option value="4">⭐⭐⭐⭐ 竞赛</option>
+    </select>
+  </div>
+
+  <div class="oj-count" id="sol-count"></div>
+  <div id="sol-list"></div>
+  <div class="pager" id="sol-pager"></div>
+</main>
+
+<footer><div class="foot-inner">
+  <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+  <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+</div></footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('solutions.html');
+initRain();
+
+const PAGE_SIZE = 30;
+let fCat = getParam('cat') || '', fDiff = '', fKw = '', page = 1;
+const viewed = new Set(JSON.parse(localStorage.getItem('lunbo_sol_viewed') || '[]'));
+
+$('#sol-total').textContent = KATAS.length;
+function refreshHUD(){
+  $('#sol-ac').textContent = KATAS.filter(k => state.done[k.id]).length;
+  $('#sol-viewed').textContent = viewed.size;
+  $('#sol-bar').style.width = (KATAS.filter(k => state.done[k.id]).length / KATAS.length * 100) + '%';
+}
+refreshHUD();
+
+const catMeta = {}; KATA_CATS.forEach(c => catMeta[c.id] = c);
+
+function renderCats(){
+  const counts = {};
+  KATAS.forEach(k => counts[k.cat] = (counts[k.cat]||0)+1);
+  const all = [{id:'', name:'全部', icon:'🌐', n:KATAS.length}]
+    .concat(KATA_CATS.map(c => ({id:c.id, name:c.name, icon:c.icon, n:counts[c.id]||0})));
+  $('#sol-cats').innerHTML = all.map(c =>
+    `<button class="cat-chip ${c.id===fCat?'active':''}" data-c="${c.id}">${c.icon} ${c.name} <span class="cat-num">${c.n}</span></button>`).join('');
+}
+renderCats();
+
+function filtered(){
+  return KATAS.filter(k =>
+    (!fCat || k.cat === fCat) &&
+    (!fDiff || k.diff === +fDiff) &&
+    (!fKw || k.title.toLowerCase().includes(fKw) || k.id.includes(fKw))
+  );
+}
+
+function renderList(){
+  const list = filtered();
+  const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  if (page > pages) page = pages;
+  const slice = list.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+  $('#sol-count').textContent = `共 ${list.length} 篇题解 · 第 ${page}/${pages} 页`;
+  $('#sol-list').innerHTML = slice.map(k => {
+    const done = state.done[k.id];
+    const cm = catMeta[k.cat] || {icon:'💻', name:k.cat};
+    const open = viewed.has(k.id);
+    return `<div class="sol-card ${done?'done':''}" data-id="${k.id}">
+      <div class="sol-head">
+        <div class="ex-emoji">${cm.icon}</div>
+        <div class="ex-main">
+          <div class="ex-title"><span class="pid-tag">${k.id}</span> ${k.title} ${done?'<span class="ac-tag">已 AC</span>':''}</div>
+          <div class="ex-sub">${cm.name} · ${diffStars(k.diff)}</div>
+        </div>
+        <button class="btn btn-small ${open?'btn-ghost':''}" data-act="toggle">${open?'📖 收起题解':'🔓 查看题解'}</button>
+        <a class="btn btn-small btn-primary" href="problem.html?id=${k.id}">🚀 去刷题</a>
+      </div>
+      <div class="sol-body" style="display:${open?'block':'none'}">
+        <div class="sol-hint">💡 思路点拨：${k.hint}</div>
+        <pre class="sol-pre"><code>${hl(k.solution)}</code></pre>
+      </div>
+    </div>`;
+  }).join('') || '<p style="color:var(--muted);text-align:center;padding:40px">没有符合条件的题解~</p>';
+
+  if (pages > 1){
+    let btns = `<button class="pager-btn" data-p="${page-1}" ${page===1?'disabled':''}>‹ 上一页</button>`;
+    const win = [];
+    for (let i = 1; i <= pages; i++) if (i===1 || i===pages || Math.abs(i-page)<=2) win.push(i);
+    let last = 0;
+    for (const i of win){ if (i - last > 1) btns += '<span class="pager-dots">…</span>'; btns += `<button class="pager-btn ${i===page?'active':''}" data-p="${i}">${i}</button>`; last = i; }
+    btns += `<button class="pager-btn" data-p="${page+1}" ${page===pages?'disabled':''}>下一页 ›</button>`;
+    $('#sol-pager').innerHTML = btns;
+  } else $('#sol-pager').innerHTML = '';
+}
+
+$('#sol-list').addEventListener('click', e => {
+  const b = e.target.closest('[data-act="toggle"]'); if (!b) return;
+  const card = b.closest('.sol-card');
+  const id = card.dataset.id;
+  const body = card.querySelector('.sol-body');
+  const isOpen = body.style.display !== 'none';
+  if (isOpen){
+    body.style.display = 'none';
+    b.textContent = '🔓 查看题解'; b.classList.remove('btn-ghost');
+  } else {
+    if (!viewed.has(id) && !state.done[id] &&
+        !confirm('这道题你还没有 AC 哦！\n\n先看题解会剧透思路，确定要看吗？\n（建议：先点「去刷题」自己试一试）')) return;
+    body.style.display = 'block';
+    b.textContent = '📖 收起题解'; b.classList.add('btn-ghost');
+    if (!viewed.has(id)){
+      viewed.add(id);
+      localStorage.setItem('lunbo_sol_viewed', JSON.stringify([...viewed]));
+      refreshHUD();
+    }
+  }
+});
+$('#sol-cats').addEventListener('click', e => {
+  const b = e.target.closest('.cat-chip'); if (!b) return;
+  fCat = b.dataset.c; page = 1;
+  $$('#sol-cats .cat-chip').forEach(x => x.classList.toggle('active', x.dataset.c === fCat));
+  renderList();
+});
+$('#sol-diff').onchange = e => { fDiff = e.target.value; page = 1; renderList(); };
+let kwTm;
+$('#sol-search').oninput = e => { clearTimeout(kwTm); kwTm = setTimeout(() => { fKw = e.target.value.trim().toLowerCase(); page = 1; renderList(); }, 200); };
+$('#sol-pager').addEventListener('click', e => {
+  const b = e.target.closest('.pager-btn'); if (!b || b.disabled) return;
+  page = +b.dataset.p; renderList();
+  scrollTo({top: $('.oj-toolbar').offsetTop - 80, behavior:'smooth'});
+});
+renderList();
+</script>
+</body>
+</html>
