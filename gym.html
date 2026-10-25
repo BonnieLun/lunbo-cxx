@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>题库闯关 · 伦博教育C++编程</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<main class="section page-top">
+  <h2 class="section-title">🎮 题库闯关 <span class="title-en">CODE GYM</span></h2>
+  <p class="section-sub">526 道互动题：六种题型 · 即时判分 · 答对赚 XP · 全对解锁徽章。想写代码实战？去 <a href="oj.html" style="color:var(--neon)">编程实战 OJ →</a></p>
+
+  <div class="gym-hud">
+    <div class="hud-item">🏆 XP <b id="hud-xp">0</b></div>
+    <div class="hud-item">📈 等级 <b id="hud-level">Lv.1 青铜码农</b></div>
+    <div class="hud-item">🔥 连对 <b id="hud-streak">0</b></div>
+    <div class="hud-item">✅ 已通关 <b id="hud-done">0</b> / <span id="hud-total">0</span></div>
+    <div class="hud-bar"><div class="hud-bar-fill" id="hud-bar-fill"></div></div>
+  </div>
+
+  <div class="gym-filters">
+    <select id="filter-stage"><option value="">全部阶段</option></select>
+    <select id="filter-type"><option value="">全部题型</option></select>
+    <select id="filter-diff"><option value="">全部难度</option><option value="1">⭐ 入门</option><option value="2">⭐⭐ 基础</option><option value="3">⭐⭐⭐ 提高</option><option value="4">⭐⭐⭐⭐ 竞赛</option><option value="5">⭐⭐⭐⭐⭐ 冲刺</option></select>
+    <button class="btn btn-small" id="btn-random">🎲 随机一题</button>
+    <button class="btn btn-small btn-danger" id="btn-reset-progress">🗑 清空进度</button>
+  </div>
+
+  <div class="gym-list" id="gym-list"></div>
+  <div class="gym-more"><button class="btn btn-small" id="btn-more">加载更多 ▼</button></div>
+</main>
+
+<!-- 答题弹窗 -->
+<div class="modal" id="quiz-modal">
+  <div class="modal-box quiz-box">
+    <button class="modal-close" id="quiz-close">✕</button>
+    <div class="modal-body" id="quiz-body"></div>
+  </div>
+</div>
+
+<footer><div class="foot-inner">
+  <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+  <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+</div></footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('gym.html');
+initRain();
+
+const TYPE_NAME = { choice:'单选题', judge:'判断题', fill:'代码填空', order:'代码排序', output:'输出预测', bug:'找茬挑错' };
+const TYPE_ICON = { choice:'🅰️', judge:'⚖️', fill:'✏️', order:'🧩', output:'🖨️', bug:'🐞' };
+const PAGE = 40;
+let shown = PAGE;
+
+function updateHUD(){
+  const L = levelOf(state.xp);
+  $('#hud-xp').textContent = state.xp;
+  $('#hud-level').textContent = `Lv.${L.lv} ${L.name}`;
+  $('#hud-streak').textContent = state.streak;
+  $('#hud-done').textContent = EXERCISES.filter(e => state.done[e.id]).length;
+  $('#hud-total').textContent = TOTAL_QUIZ;
+  $('#hud-bar-fill').style.width = (EXERCISES.filter(e => state.done[e.id]).length / TOTAL_QUIZ * 100) + '%';
+  updateNavXP();
+}
+
+$('#filter-stage').innerHTML = '<option value="">全部阶段</option>' +
+  STAGES.map(s => `<option value="${s.id}">${s.name.split(' · ')[1]}</option>`).join('');
+$('#filter-type').innerHTML = '<option value="">全部题型</option>' +
+  Object.entries(TYPE_NAME).map(([k, v]) => `<option value="${k}">${TYPE_ICON[k]} ${v}</option>`).join('');
+const preStage = getParam('stage');
+if (preStage) $('#filter-stage').value = preStage;
+['filter-stage','filter-type','filter-diff'].forEach(id => $('#' + id).addEventListener('change', () => { shown = PAGE; renderGym(); }));
+
+function filtered(){
+  const fs = $('#filter-stage').value, ft = $('#filter-type').value, fd = $('#filter-diff').value;
+  return EXERCISES.filter(e => (!fs || e.stage === fs) && (!ft || e.type === ft) && (!fd || e.diff === +fd));
+}
+function renderGym(){
+  const list = filtered();
+  const show = list.slice(0, shown);
+  $('#gym-list').innerHTML = show.length ? show.map(e => {
+    const done = state.done[e.id];
+    return `<div class="ex-card ${done?'done':''}" data-id="${e.id}">
+      <div class="ex-emoji">${TYPE_ICON[e.type]}</div>
+      <div class="ex-main">
+        <div class="ex-title">${e.title}</div>
+        <div class="ex-sub">${stageName(e.stage)} · ${TYPE_NAME[e.type]}</div>
+      </div>
+      <div class="ex-diff">${diffStars(e.diff)}</div>
+      <div class="ex-xp">+${e.xp} XP</div>
+      <div class="ex-status">${done ? '✅' : '🎮'}</div>
+    </div>`;
+  }).join('') : '<div style="color:var(--muted);text-align:center;padding:40px">该筛选条件下暂无题目</div>';
+  $('#btn-more').style.display = list.length > shown ? '' : 'none';
+  if (list.length > shown) $('#btn-more').textContent = `加载更多 ▼（还有 ${list.length - shown} 题）`;
+}
+$('#btn-more').onclick = () => { shown += PAGE; renderGym(); };
+renderGym(); updateHUD();
+
+$('#gym-list').addEventListener('click', e => {
+  const card = e.target.closest('.ex-card'); if (!card) return;
+  openQuiz(EXERCISES.find(x => x.id === card.dataset.id));
+});
+$('#btn-random').onclick = () => {
+  const pool = filtered().filter(e => !state.done[e.id]);
+  const src = pool.length ? pool : filtered();
+  if (!src.length) return toast('没有可出的题目啦');
+  openQuiz(src[Math.floor(Math.random() * src.length)]);
+};
+$('#btn-reset-progress').onclick = () => {
+  if (!confirm('确定清空全部答题与学习进度？此操作不可恢复！')) return;
+  localStorage.removeItem('lunbo_cpp_v1');
+  state = loadState(); updateHUD(); renderGym(); toast('进度已清空，重新出发！');
+};
+
+/* ---------------- 答题引擎 ---------------- */
+let quizAnswered = false;
+function openQuiz(ex){
+  quizAnswered = false;
+  const body = $('#quiz-body');
+  const codeHtml = ex.code ? `<pre class="quiz-code">${hl(ex.code)}</pre>` : '';
+  body.innerHTML = `
+    <div class="quiz-head">
+      <span class="quiz-type">${TYPE_ICON[ex.type]} ${TYPE_NAME[ex.type]}</span>
+      <span class="quiz-diff">${diffStars(ex.diff)}</span>
+      <span class="quiz-xp">+${ex.xp} XP</span>
+    </div>
+    <div class="quiz-title">${ex.title}</div>
+    <div class="quiz-q">${ex.question || ''}</div>
+    ${codeHtml}
+    <div id="quiz-zone"></div>
+    <div class="quiz-actions"><button class="btn btn-primary" id="quiz-submit">提交答案</button></div>
+    <div class="quiz-feedback" id="quiz-feedback"></div>`;
+  const zone = $('#quiz-zone');
+  let getAnswer;
+
+  if (ex.type === 'judge'){
+    zone.innerHTML = ['✔️ 正确', '❌ 错误'].map((t, i) =>
+      `<button class="opt" data-v="${i}"><span class="key">${i===0?'A':'B'}</span>${t}</button>`).join('');
+    getAnswer = setupOptions(v => (v === 0) === ex.answer);
+  } else if (ex.type === 'fill'){
+    zone.innerHTML = `<input class="quiz-input" id="fill-input" placeholder="在此输入答案…" autocomplete="off" spellcheck="false">`;
+    const norm = s => s.replace(/[\s;]+/g, '').toLowerCase();
+    getAnswer = () => {
+      const v = $('#fill-input').value;
+      return ex.accept.some(group => group.some(a => norm(a) === norm(v)));
+    };
+    $('#fill-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('#quiz-submit').click(); });
+    setTimeout(() => $('#fill-input').focus(), 100);
+  } else if (ex.type === 'order'){
+    const idx = ex.lines.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    const picked = [];
+    zone.innerHTML = `<p style="color:var(--muted);font-size:.85rem">👇 按正确顺序依次点击代码行（再点已选行可撤销）</p>
+      <div>${idx.map(i => `<div class="order-line" data-i="${i}"><span class="seq">·</span><span>${ex.lines[i].replace(/</g,'&lt;')}</span></div>`).join('')}</div>
+      <div class="order-preview" id="order-preview">排序结果将显示在这里…</div>`;
+    zone.querySelectorAll('.order-line').forEach(el => el.addEventListener('click', () => {
+      if (quizAnswered) return;
+      const i = +el.dataset.i;
+      const at = picked.indexOf(i);
+      if (at >= 0) picked.splice(at, 1); else picked.push(i);
+      zone.querySelectorAll('.order-line').forEach(x => {
+        const xi = +x.dataset.i, p = picked.indexOf(xi);
+        x.classList.toggle('picked', p >= 0);
+        x.querySelector('.seq').textContent = p >= 0 ? p + 1 : '·';
+      });
+      $('#order-preview').innerHTML = picked.map((p, k) => `<code>${k + 1} │ ${ex.lines[p].replace(/</g,'&lt;')}</code>`).join('') || '排序结果将显示在这里…';
+    }));
+    getAnswer = () => picked.length === ex.lines.length && picked.every((v, i) => v === i);
+  } else {
+    zone.innerHTML = ex.options.map((o, i) =>
+      `<button class="opt" data-v="${i}"><span class="key">${'ABCD'[i]}</span>${o}</button>`).join('');
+    getAnswer = setupOptions(v => v === ex.answer);
+  }
+
+  function setupOptions(judge){
+    let sel = -1;
+    zone.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+      if (quizAnswered) return;
+      zone.querySelectorAll('.opt').forEach(x => x.style.borderColor = '');
+      b.style.borderColor = 'var(--neon)';
+      sel = +b.dataset.v;
+    }));
+    return () => sel >= 0 && judge(sel);
+  }
+
+  $('#quiz-submit').onclick = () => {
+    if (quizAnswered) return;
+    const ok = getAnswer();
+    state.answered++;
+    const fb = $('#quiz-feedback');
+    if (ok){
+      quizAnswered = true;
+      state.correct++;
+      const first = !state.done[ex.id];
+      state.done[ex.id] = 1;
+      state.streak++; state.bestStreak = Math.max(state.bestStreak, state.streak);
+      if (first) awardXP(ex.xp); else toast('答对了！（已通关题不再加 XP）');
+      saveState(); updateHUD(); renderGym(); checkBadges();
+      fb.className = 'quiz-feedback ok show';
+      fb.innerHTML = `<div class="qf-title">🎉 回答正确！</div><div class="qf-exp">${ex.explanation}</div>`;
+      fireConfetti(70);
+      zone.querySelectorAll('.opt, .order-line').forEach(x => x.classList.add('disabled'));
+      $('#quiz-submit').textContent = '✅ 已通关';
+      $('#quiz-submit').disabled = true;
+    } else {
+      state.streak = 0; saveState(); updateHUD();
+      fb.className = 'quiz-feedback no show';
+      fb.innerHTML = `<div class="qf-title">💥 回答错误，再想想！</div><div class="qf-exp">💡 ${ex.explanation}</div>`;
+      zone.querySelectorAll('.opt').forEach(x => {
+        if (x.style.borderColor === 'var(--neon)'){ x.classList.add('wrong'); setTimeout(()=>{ x.classList.remove('wrong'); x.style.borderColor=''; }, 900); }
+      });
+    }
+  };
+  $('#quiz-modal').classList.add('show');
+}
+$('#quiz-close').onclick = () => $('#quiz-modal').classList.remove('show');
+$('#quiz-modal').addEventListener('click', e => { if (e.target === $('#quiz-modal')) $('#quiz-modal').classList.remove('show'); });
+
+/* 3D 倾斜 */
+document.addEventListener('mousemove', e => {
+  const card = e.target.closest('.ex-card');
+  if (!card) return;
+  const r = card.getBoundingClientRect();
+  card.style.transform = `perspective(900px) rotateX(${((e.clientY-r.top)/r.height-.5)*-6}deg) rotateY(${((e.clientX-r.left)/r.width-.5)*6}deg)`;
+});
+document.addEventListener('mouseout', e => {
+  const card = e.target.closest('.ex-card');
+  if (card) card.style.transform = '';
+});
+</script>
+</body>
+</html>
