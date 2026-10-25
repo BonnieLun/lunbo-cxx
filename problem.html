@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在线评测 · 伦博教育C++编程</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<main class="section page-top">
+  <div class="oj-topbar">
+    <a href="oj.html" class="btn btn-small">← 返回题目列表</a>
+    <span id="oj-crumb" style="color:var(--muted);font-size:.88rem"></span>
+    <a href="solutions.html" class="btn btn-small btn-ghost" style="margin-left:auto">📖 题解中心</a>
+  </div>
+  <div class="oj-split">
+    <!-- 左：题面 -->
+    <div class="oj-left" id="oj-statement"></div>
+    <!-- 右：编辑器 + 评测 -->
+    <div class="oj-right">
+      <div class="oj-editor-bar">
+        <span class="oj-file">📝 main.cpp</span>
+        <span class="oj-lang">g++ · C++17</span>
+        <button class="btn btn-small" id="oj-reset">↺ 重置代码</button>
+      </div>
+      <textarea id="oj-editor" spellcheck="false" autocomplete="off"></textarea>
+      <div class="oj-actions">
+        <button class="btn btn-small" id="oj-run-sample">▶ 运行样例</button>
+        <button class="btn btn-primary" id="oj-submit">🚀 提交评测</button>
+      </div>
+      <pre class="oj-result" id="oj-result">评测结果将显示在这里…</pre>
+    </div>
+  </div>
+</main>
+
+<footer><div class="foot-inner">
+  <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+  <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+</div></footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('oj.html');
+initRain();
+
+const k = KATAS.find(x => x.id === getParam('id')) || KATAS[0];
+document.title = k.title + ' · 伦博教育C++编程';
+$('#oj-crumb').textContent = `${stageName(k.stage)} · ${diffStars(k.diff)} · +${k.xp} XP ${state.done[k.id] ? '· ✅ 已 AC' : ''}`;
+
+/* 题面 */
+$('#oj-statement').innerHTML = `
+  <h2 style="margin-bottom:6px">${k.title} ${state.done[k.id]?'<span class="ac-tag">AC</span>':''}</h2>
+  <p class="oj-stmt">${k.statement}</p>
+  <h3>📥 输入格式</h3><p>${k.inFmt}</p>
+  <h3>📤 输出格式</h3><p>${k.outFmt}</p>
+  <h3>📌 样例</h3>
+  ${k.samples.map((s, i) => `
+    <div class="sample-box">
+      <div class="sample-col"><div class="sample-tag">输入 #${i+1}</div><pre>${s.in}</pre></div>
+      <div class="sample-col"><div class="sample-tag">输出 #${i+1}</div><pre>${s.out}</pre></div>
+    </div>`).join('')}
+  <h3>💡 提示</h3><p style="color:var(--muted)">${k.hint}</p>
+  <p style="color:var(--muted);font-size:.8rem;margin-top:14px">评测机将用 ${k.tests.length} 个测试点（含隐藏点）判分，全部通过才算 AC。</p>`;
+
+/* 编辑器 */
+const ed = $('#oj-editor');
+ed.value = k.starter;
+$('#oj-reset').onclick = () => { if (confirm('重置为初始代码模板？')) ed.value = k.starter; };
+ed.addEventListener('keydown', e => {
+  if (e.key === 'Tab'){
+    e.preventDefault();
+    const s = ed.selectionStart;
+    ed.value = ed.value.slice(0, s) + '    ' + ed.value.slice(ed.selectionEnd);
+    ed.selectionStart = ed.selectionEnd = s + 4;
+  }
+});
+
+/* ---------------- 在线评测（Godbolt Compiler Explorer API 真实编译运行） ---------------- */
+const norm = s => s.replace(/\r/g, '').split('\n').map(l => l.trimEnd()).join('\n').trim();
+const joinTxt = arr => (arr || []).map(x => x.text).join('\n');
+
+async function runCPP(code, stdin){
+  const ctl = new AbortController();
+  const tm = setTimeout(() => ctl.abort(), 45000);
+  try{
+    const res = await fetch('https://godbolt.org/api/compiler/g132/compile', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+      body: JSON.stringify({
+        source: code,
+        options: {
+          userArguments: '-O2 -std=c++17',
+          executeParameters: { args: [], stdin },
+          compilerOptions: { executorRequest: true },
+          filters: { execute: true }
+        }
+      }),
+      signal: ctl.signal
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const r = await res.json();
+    if (r.buildResult && r.buildResult.code !== 0){
+      return { ce: joinTxt(r.buildResult.stderr) || '编译失败' };
+    }
+    if (!r.didExecute) return { ce: '', stdout: '', stderr: '代码未执行（可能编译超时）', re: true };
+    return { ce: '', stdout: joinTxt(r.stdout), stderr: joinTxt(r.stderr),
+             re: r.code !== 0, tle: !!r.timedOut };
+  } finally { clearTimeout(tm); }
+}
+
+let judging = false;
+async function judge(onlySample){
+  if (judging) return;
+  judging = true;
+  const tests = onlySample ? k.tests.slice(0, k.samples.length) : k.tests;
+  const out = $('#oj-result');
+  const btn = onlySample ? $('#oj-run-sample') : $('#oj-submit');
+  btn.disabled = true;
+  out.textContent = '⏳ 正在连接评测机（GCC 13.2 · -O2 · C++17），每个测试点需真实编译运行几秒钟…\n';
+  try{
+    let allPass = true;
+    for (let i = 0; i < tests.length; i++){
+      const t = tests[i];
+      out.textContent += `\n── 测试点 #${i+1} ── 编译运行中…`;
+      const r = await runCPP(ed.value, t.in);
+      if (r.ce){
+        out.textContent = '❌ 编译错误（CE）\n\n' + r.ce.slice(0, 1500);
+        allPass = false; break;
+      }
+      if (r.tle){
+        out.textContent = out.textContent.replace(/── 编译运行中…$/, '⏰ 运行超时（TLE）');
+        allPass = false; break;
+      }
+      if (r.re){
+        out.textContent = out.textContent.replace(/── 编译运行中…$/, '💥 运行错误（RE）');
+        out.textContent += '\n' + (r.stderr || '').slice(0, 500);
+        allPass = false; break;
+      }
+      const got = norm(r.stdout || '');
+      const want = norm(t.out);
+      if (got === want){
+        out.textContent = out.textContent.replace(/── 编译运行中…$/, '✅ 通过');
+      } else {
+        allPass = false;
+        out.textContent = out.textContent.replace(/── 编译运行中…$/, '❌ 答案错误（WA）');
+        out.textContent += `\n  输入：${t.in.replace(/\n/g, ' ⏎ ')}\n  你的输出：${got || '(无输出)'}\n  期望输出：${want}`;
+        break;
+      }
+    }
+    if (allPass){
+      if (onlySample){
+        out.textContent += '\n\n🎉 样例全部通过！点「提交评测」挑战隐藏测试点。';
+      } else {
+        out.textContent += `\n\n🏆 Accepted！${tests.length}/${tests.length} 全部通过！`;
+        if (!state.done[k.id]){
+          state.done[k.id] = 1; saveState(); awardXP(k.xp); checkBadges();
+          $('#oj-crumb').textContent += ' · ✅ 已 AC';
+        } else toast('已 AC 过，稳健！');
+        fireConfetti(120);
+      }
+    } else if (!onlySample){
+      out.textContent += '\n\n继续调试，你可以的！💪';
+    }
+  } catch(err){
+    out.textContent = '⚠️ 在线评测机暂时无法连接（' + err.message + '）。\n\n' +
+      '你可以：\n1. 检查网络后重试；\n2. 把代码复制到本地 Dev-C++ / 洛谷 IDE 自测；\n3. 自测全部通过后点击下方按钮领取 XP（诚信模式）。';
+    if (!$('#oj-honor')){
+      const b = document.createElement('button');
+      b.id = 'oj-honor'; b.className = 'btn btn-small'; b.style.marginTop = '10px';
+      b.textContent = '✋ 我已在本地全部测过，诚信领取 XP';
+      b.onclick = () => {
+        if (!state.done[k.id]){
+          state.done[k.id] = 1; saveState(); awardXP(k.xp); checkBadges();
+          $('#oj-crumb').textContent += ' · ✅ 已 AC';
+        }
+        b.remove();
+      };
+      out.after(b);
+    }
+  }
+  btn.disabled = false;
+  judging = false;
+}
+$('#oj-run-sample').onclick = () => judge(true);
+$('#oj-submit').onclick = () => judge(false);
+</script>
+</body>
+</html>
