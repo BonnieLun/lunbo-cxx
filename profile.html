@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的成就 · 伦博教育C++编程</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<main class="section page-top">
+  <h2 class="section-title">🏅 我的成就 <span class="title-en">ACHIEVEMENTS</span></h2>
+  <p class="section-sub">你的每一次答题、每一次 AC、每一章课程，都被记录在这里。</p>
+  <div class="profile-wrap">
+    <div class="profile-card">
+      <div class="profile-avatar" id="profile-avatar">🥉</div>
+      <div class="profile-level" id="profile-level">Lv.1 青铜码农</div>
+      <div class="profile-xpbar"><div id="profile-xpfill"></div></div>
+      <div class="profile-xpnum" id="profile-xpnum">0 / 100 XP</div>
+      <div class="profile-stats" id="profile-stats"></div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:14px">🏆 徽章墙 <span style="font-size:.75rem;color:var(--muted)">（点亮的徽章说明你已经达成对应成就）</span></h3>
+      <div class="badge-wall" id="badge-wall"></div>
+      <h3 style="margin:26px 0 14px">📊 各阶段通关进度</h3>
+      <div id="stage-progress"></div>
+    </div>
+  </div>
+</main>
+
+<footer><div class="foot-inner">
+  <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+  <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+</div></footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('profile.html');
+initRain();
+
+const L = levelOf(state.xp), nx = nextLevel(state.xp);
+$('#profile-avatar').textContent = L.icon;
+$('#profile-level').textContent = `Lv.${L.lv} ${L.name}`;
+const base = L.xp, span = nx ? nx.xp - base : 1, cur = nx ? state.xp - base : 1;
+$('#profile-xpfill').style.width = Math.min(100, cur / span * 100) + '%';
+$('#profile-xpnum').textContent = nx ? `${state.xp} / ${nx.xp} XP（距 Lv.${nx.lv} 还差 ${nx.xp - state.xp}）` : `${state.xp} XP · 已满级，你就是传说！`;
+
+const quizDone = EXERCISES.filter(e => state.done[e.id]).length;
+const kataDone = KATAS.filter(k => state.done[k.id]).length;
+$('#profile-stats').innerHTML = `
+  <div class="ps-item"><div class="ps-num">${quizDone}</div><div class="ps-label">闯关通关</div></div>
+  <div class="ps-item"><div class="ps-num">${kataDone}</div><div class="ps-label">OJ 已 AC</div></div>
+  <div class="ps-item"><div class="ps-num">${state.correct ? Math.round(state.correct/state.answered*100) : 0}%</div><div class="ps-label">答题正确率</div></div>
+  <div class="ps-item"><div class="ps-num">${state.bestStreak}</div><div class="ps-label">最高连对</div></div>`;
+
+$('#badge-wall').innerHTML = BADGES.map(b => {
+  const un = state.badges.includes(b.id);
+  return `<div class="badge ${un?'unlocked':'locked'}"><div class="badge-icon">${b.icon}</div>
+    <div class="badge-name">${b.name}</div><div class="badge-desc">${b.desc}</div></div>`;
+}).join('');
+
+$('#stage-progress').innerHTML = STAGES.map(s => {
+  const total = EXERCISES.filter(e => e.stage === s.id).length;
+  const done = EXERCISES.filter(e => e.stage === s.id && state.done[e.id]).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  return `<div class="sp-row">
+    <div class="sp-name" style="color:${s.color}">${s.name.split(' · ')[1]}</div>
+    <div class="sp-bar"><div class="sp-fill" style="width:${pct}%;background:${s.color}"></div></div>
+    <div class="sp-num">${done}/${total}</div>
+  </div>`;
+}).join('');
+</script>
+</body>
+</html>
