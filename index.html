@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>伦博教育C++编程 · 从零基础到CSP-J/S高分</title>
+<meta name="description" content="伦博教育C++编程：零基础到信息学竞赛CSP-J/CSP-S高分的完整学习路径，12大章节精品课程，500+道互动习题，12道在线评测编程实战。">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<header class="hero" id="home">
+  <canvas id="hero-3d"></canvas>
+  <div class="hero-content">
+    <div class="hero-tag">信息学奥赛 · 体系化训练平台</div>
+    <h1 class="hero-title">伦博教育<span class="grad-text">C++编程</span></h1>
+    <div class="hero-typed-wrap">
+      <span class="prompt">&gt;_</span>
+      <span id="typed-text"></span><span class="cursor">▌</span>
+    </div>
+    <p class="hero-sub">从零基础第一行 <code>Hello World</code>，到 CSP-J / CSP-S 赛场斩获奖牌 —— 一条被验证过的完整进阶之路。</p>
+    <div class="hero-btns">
+      <a href="path.html" class="btn btn-primary">🚀 开始学习之旅</a>
+      <a href="oj.html" class="btn btn-ghost">💻 直接写代码实战</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num" data-count="12">0</div><div class="stat-label">精品章节</div></div>
+      <div class="stat"><div class="stat-num" id="stat-quiz" data-count="526">0</div><div class="stat-label">闯关习题</div></div>
+      <div class="stat"><div class="stat-num" id="stat-kata" data-count="1000">0</div><div class="stat-label">OJ 编程实战</div></div>
+      <div class="stat"><div class="stat-num" data-count="4">0</div><div class="stat-label">进阶阶段</div></div>
+    </div>
+  </div>
+  <div class="hero-terminal">
+    <div class="term-bar"><i></i><i></i><i></i><span>main.cpp — 伦博教育</span></div>
+    <pre class="term-body"><code id="hero-code"></code></pre>
+  </div>
+</header>
+
+<main class="section">
+  <h2 class="section-title">🧭 选择一个入口，即刻出发</h2>
+  <p class="section-sub">每个功能都是独立页面，进度全站共享、自动保存</p>
+  <div class="portal-grid">
+    <a class="portal-card" href="path.html" style="--pc:#00e676">
+      <div class="portal-icon">🗺️</div><div class="portal-name">学习路径</div>
+      <div class="portal-desc">四级火箭进阶路线：零基础 → 语法 → CSP-J → CSP-S</div>
+    </a>
+    <a class="portal-card" href="courses.html" style="--pc:#00e5ff">
+      <div class="portal-icon">📚</div><div class="portal-name">精品课程</div>
+      <div class="portal-desc">12 章系统课：模板代码 + 易错点 + 考场策略</div>
+    </a>
+    <a class="portal-card" href="gym.html" style="--pc:#7c4dff">
+      <div class="portal-icon">🎮</div><div class="portal-name">题库闯关</div>
+      <div class="portal-desc">526 道互动题：单选/判断/填空/排序/输出预测/找茬</div>
+    </a>
+    <a class="portal-card" href="oj.html" style="--pc:#ffd54f">
+      <div class="portal-icon">💻</div><div class="portal-name">编程实战 OJ</div>
+      <div class="portal-desc">1000 道经典编程题 · 12 大分类 · LeetCode 式真实评测</div>
+    </a>
+    <a class="portal-card" href="solutions.html" style="--pc:#ff6e7f">
+      <div class="portal-icon">📖</div><div class="portal-name">题解中心</div>
+      <div class="portal-desc">1000 篇标准 C++ 题解 + 思路点拨，卡壳时的弹药库</div>
+    </a>
+    <a class="portal-card" href="playground.html" style="--pc:#00e676">
+      <div class="portal-icon">🖥️</div><div class="portal-name">在线演示</div>
+      <div class="portal-desc">经典算法模拟运行，控制台逐行动画输出</div>
+    </a>
+    <a class="portal-card" href="profile.html" style="--pc:#ffab40">
+      <div class="portal-icon">🏅</div><div class="portal-name">我的成就</div>
+      <div class="portal-desc">XP 段位、徽章墙、连对纪录，见证你的成长</div>
+    </a>
+  </div>
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+    <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+  </div>
+</footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('index.html');
+initRain();
+
+/* 习题总数动态更新 */
+$('#stat-quiz').dataset.count = TOTAL_QUIZ;
+$('#stat-kata').dataset.count = KATAS.length;
+
+/* 打字机 */
+(function(){
+  const phrases = [
+    'cout << "Hello, 信息学奥赛!";',
+    '从零基础 → CSP-J 一等奖',
+    '从语法筑基 → CSP-S 高分',
+    'while (alive) keepCoding();',
+    '下一站：NOIP → 省选 → NOI',
+  ];
+  const el = $('#typed-text');
+  let pi = 0, ci = 0, del = false;
+  (function tick(){
+    const p = phrases[pi];
+    el.textContent = p.slice(0, ci);
+    if (!del){ ci++; if (ci > p.length){ del = true; return setTimeout(tick, 1700); } }
+    else { ci--; if (ci === 0){ del = false; pi = (pi + 1) % phrases.length; } }
+    setTimeout(tick, del ? 28 : 62);
+  })();
+  $('#hero-code').innerHTML = hl(
+`#include <bits/stdc++.h>
+using namespace std;
+
+// 伦博教育 · 学员成长函数
+int main() {
+    int level = 0;            // 从零基础开始
+    vector<string> roadmap = {
+        "语法筑基", "算法入门",
+        "CSP-J 一等奖", "CSP-S 高分"
+    };
+    for (auto& stage : roadmap) {
+        level += train(stage);   // 每章都是一次升级
+    }
+    cout << "AK CSP-S! level=" << level;
+    return 0;                  // 满分只是新的起点
+}`);
+})();
+
+/* Hero 3D 线框二十面体（鼠标交互） */
+(function(){
+  const holder = $('#hero-3d');
+  const ctx = holder.getContext('2d');
+  const S = 520; holder.width = S; holder.height = S;
+  const t = (1 + Math.sqrt(5)) / 2, V = [];
+  [[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]]
+    .forEach(v => { const l = Math.hypot(...v); V.push(v.map(c => c / l)); });
+  const E = [];
+  for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++){
+    const d = Math.hypot(V[i][0]-V[j][0], V[i][1]-V[j][1], V[i][2]-V[j][2]);
+    if (d < 1.1) E.push([i, j]);
+  }
+  let mx = 0, my = 0;
+  addEventListener('mousemove', e => { mx = (e.clientX / innerWidth - .5); my = (e.clientY / innerHeight - .5); });
+  let ax = 0, ay = 0;
+  (function frame(){
+    ctx.clearRect(0, 0, S, S);
+    ax += .004 + mx * .01; ay += .003 + my * .008;
+    const cx = Math.cos(ax), sx = Math.sin(ax), cy2 = Math.cos(ay), sy2 = Math.sin(ay);
+    const P = V.map(([x, y, z]) => {
+      let x1 = x * cx - z * sx, z1 = x * sx + z * cx;
+      let y1 = y * cy2 - z1 * sy2, z2 = y * sy2 + z1 * cy2;
+      const p = 2.6 / (2.6 + z2);
+      return [S/2 + x1 * 150 * p, S/2 + y1 * 150 * p, p];
+    });
+    for (const [i, j] of E){
+      const g = ctx.createLinearGradient(P[i][0], P[i][1], P[j][0], P[j][1]);
+      g.addColorStop(0, `rgba(0,229,255,${P[i][2]*.55})`); g.addColorStop(1, `rgba(124,77,255,${P[j][2]*.55})`);
+      ctx.strokeStyle = g; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(P[i][0], P[i][1]); ctx.lineTo(P[j][0], P[j][1]); ctx.stroke();
+    }
+    for (const [x, y, p] of P){
+      ctx.fillStyle = `rgba(255,213,79,${p*.8})`;
+      ctx.beginPath(); ctx.arc(x, y, p * 2.6, 0, 7); ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  })();
+})();
+
+/* 数字滚动 */
+(function(){
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target, target = +el.dataset.count; let cur = 0;
+    const step = Math.max(1, target / 40);
+    const tm = setInterval(() => { cur += step; if (cur >= target){ cur = target; clearInterval(tm); } el.textContent = Math.floor(cur); }, 30);
+    io.unobserve(el);
+  }), { threshold:.5 });
+  $$('.stat-num').forEach(el => io.observe(el));
+})();
+
+/* 3D 卡片倾斜 */
+document.addEventListener('mousemove', e => {
+  const card = e.target.closest('.portal-card');
+  if (!card) return;
+  const r = card.getBoundingClientRect();
+  const rx = ((e.clientY - r.top) / r.height - .5) * -12;
+  const ry = ((e.clientX - r.left) / r.width - .5) * 12;
+  card.style.transform = `perspective(700px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px)`;
+});
+document.addEventListener('mouseout', e => {
+  const card = e.target.closest('.portal-card');
+  if (card) card.style.transform = '';
+});
+</script>
+</body>
+</html>
