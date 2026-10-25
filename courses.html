@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>精品课程 · 伦博教育C++编程</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<main class="section page-top">
+  <h2 class="section-title">📚 精品课程 <span class="title-en">COURSES</span></h2>
+  <p class="section-sub">12 章系统课程，从零基础直通 CSP-S。点击卡片进入独立课程页学习，学完点亮进度。</p>
+  <div class="stage-filter" id="stage-filter"></div>
+  <div class="course-grid" id="course-grid"></div>
+</main>
+
+<footer><div class="foot-inner">
+  <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+  <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+</div></footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('courses.html');
+initRain();
+
+const filters = [{id:'', name:'全部'} , ...STAGES.map(s => ({id:s.id, name:s.name.split(' · ')[1]}))];
+const preStage = getParam('stage') || '';
+$('#stage-filter').innerHTML = filters.map(f =>
+  `<button class="sf-btn ${f.id===preStage?'active':''}" data-f="${f.id}">${f.name}</button>`).join('');
+
+function renderCourses(f = ''){
+  $('#course-grid').innerHTML = COURSES.filter(c => !f || c.stage === f).map((c, i) => {
+    const done = state.read[c.id];
+    return `<a class="course-card ${done?'done':''}" href="course.html?id=${c.id}" style="animation:cardin .5s ${i * .05}s both">
+      <div class="cc-done">✅ 已学完</div>
+      <div class="cc-icon">${c.icon}</div>
+      <div class="cc-stage" style="color:${stageColor(c.stage)}">${stageName(c.stage)}</div>
+      <div class="cc-title">${c.title}</div>
+      <div class="cc-desc">${c.desc}</div>
+      <div class="cc-meta"><span>⏱ 约 ${c.minutes} 分钟</span><span>点击学习 →</span></div>
+    </a>`;
+  }).join('');
+}
+$('#stage-filter').addEventListener('click', e => {
+  const b = e.target.closest('.sf-btn'); if (!b) return;
+  $$('.sf-btn').forEach(x => x.classList.remove('active')); b.classList.add('active');
+  renderCourses(b.dataset.f);
+});
+renderCourses(preStage);
+
+/* 3D 倾斜 */
+document.addEventListener('mousemove', e => {
+  const card = e.target.closest('.course-card');
+  if (!card) return;
+  const r = card.getBoundingClientRect();
+  card.style.transform = `perspective(800px) rotateX(${((e.clientY-r.top)/r.height-.5)*-12}deg) rotateY(${((e.clientX-r.left)/r.width-.5)*12}deg) translateY(-6px)`;
+});
+document.addEventListener('mouseout', e => {
+  const card = e.target.closest('.course-card');
+  if (card) card.style.transform = '';
+});
+</script>
+</body>
+</html>
