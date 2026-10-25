@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>课程详情 · 伦博教育C++编程</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<main class="section page-top course-page">
+  <div class="course-layout">
+    <aside class="course-side" id="course-side"></aside>
+    <article class="course-main">
+      <div class="lesson" id="lesson-body"></div>
+      <div class="course-foot">
+        <button class="btn btn-primary" id="btn-finish">✅ 学完本章，点亮进度</button>
+        <div class="course-pn">
+          <button class="btn btn-small" id="btn-prev">← 上一章</button>
+          <button class="btn btn-small" id="btn-next">下一章 →</button>
+        </div>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer><div class="foot-inner">
+  <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+  <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+</div></footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('courses.html');
+initRain();
+
+const id = getParam('id') || COURSES[0].id;
+const c = COURSES.find(x => x.id === id) || COURSES[0];
+const idx = COURSES.indexOf(c);
+document.title = c.title + ' · 伦博教育C++编程';
+
+/* 侧边目录 */
+$('#course-side').innerHTML = `<div class="side-title">📖 课程目录</div>` + COURSES.map(x =>
+  `<a class="side-item ${x.id===c.id?'active':''} ${state.read[x.id]?'done':''}" href="course.html?id=${x.id}">
+    <span>${x.icon}</span><span>${x.title}</span>${state.read[x.id]?'<b>✓</b>':''}
+  </a>`).join('');
+
+/* 正文（含代码高亮处理） */
+$('#lesson-body').innerHTML = `
+  <div class="lesson-head">
+    <div class="cc-stage" style="color:${stageColor(c.stage)}">${STAGES.find(s=>s.id===c.stage).name}</div>
+    <h2 style="margin:6px 0 4px">${c.icon} ${c.title}</h2>
+    <p style="color:var(--muted);font-size:.9rem">${c.desc} · ⏱ 约 ${c.minutes} 分钟 ${state.read[c.id]?'· <span style="color:var(--green)">✅ 已学完</span>':''}</p>
+  </div>` + c.content.replace(/<pre>([\s\S]*?)<\/pre>/g, (m, p1) => '<pre>' + hl(p1.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&')) + '</pre>');
+
+$('#btn-finish').onclick = () => {
+  if (!state.read[c.id]){
+    state.read[c.id] = 1; saveState(); updateNavXP(); checkBadges();
+    toast(`📖 已点亮「${c.title}」`); fireConfetti(60);
+    $('#btn-finish').textContent = '✅ 本章已点亮';
+    $$('.side-item').forEach(el => { if (el.href.includes('id=' + c.id)){ el.classList.add('done'); if(!el.querySelector('b')) el.insertAdjacentHTML('beforeend','<b>✓</b>'); } });
+  } else toast('本章已点亮过啦');
+};
+if (state.read[c.id]) $('#btn-finish').textContent = '✅ 本章已点亮';
+
+$('#btn-prev').onclick = () => { if (idx > 0) location.href = 'course.html?id=' + COURSES[idx-1].id; else toast('已经是第一章'); };
+$('#btn-next').onclick = () => { if (idx < COURSES.length - 1) location.href = 'course.html?id=' + COURSES[idx+1].id; else toast('已经是最后一章，去题库实战吧！'); };
+</script>
+</body>
+</html>
