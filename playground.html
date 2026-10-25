@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在线演示 · 伦博教育C++编程</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<main class="section page-top">
+  <h2 class="section-title">💻 在线演示 <span class="title-en">PLAYGROUND</span></h2>
+  <p class="section-sub">经典算法示例，点击「运行」观看模拟执行过程。想真正写代码评测？去 <a href="oj.html" style="color:var(--neon)">编程实战 OJ →</a></p>
+  <div class="playground">
+    <div class="pg-left">
+      <div class="pg-tabs" id="pg-tabs"></div>
+      <div class="term-bar"><i></i><i></i><i></i><span id="pg-filename">demo.cpp</span></div>
+      <pre class="pg-code"><code id="pg-code"></code></pre>
+      <button class="btn btn-primary" id="pg-run">▶ 运行</button>
+    </div>
+    <div class="pg-right">
+      <div class="term-bar dark"><i></i><i></i><i></i><span>控制台输出</span></div>
+      <pre class="pg-console" id="pg-console">等待运行…</pre>
+    </div>
+  </div>
+</main>
+
+<footer><div class="foot-inner">
+  <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+  <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+</div></footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('playground.html');
+initRain();
+
+const DEMOS = [
+  { name:'hello.cpp', title:'Hello World',
+    code:`#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello, 伦博教育!" << endl;
+    cout << "C++ 之旅，启程！" << endl;
+    return 0;
+}`,
+    out:['$ g++ hello.cpp -o hello -O2', '$ ./hello', 'Hello, 伦博教育!', 'C++ 之旅，启程！', '', '进程已结束，退出代码 0 ✔'] },
+  { name:'bubble.cpp', title:'冒泡排序',
+    code:`#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int a[5] = {5, 2, 8, 1, 9};
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4 - i; j++)
+            if (a[j] > a[j + 1])
+                swap(a[j], a[j + 1]);
+    for (int i = 0; i < 5; i++)
+        cout << a[i] << " ";
+    return 0;
+}`,
+    out:['$ g++ bubble.cpp -o bubble -O2', '$ ./bubble', '初始: 5 2 8 1 9', '第1轮: 2 5 1 8 9', '第2轮: 2 1 5 8 9', '第3轮: 1 2 5 8 9', '排序完成 ✔', '', '1 2 5 8 9'] },
+  { name:'fib.cpp', title:'斐波那契递推',
+    code:`#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    long long f[11];
+    f[1] = f[2] = 1;
+    for (int i = 3; i <= 10; i++)
+        f[i] = f[i - 1] + f[i - 2];
+    for (int i = 1; i <= 10; i++)
+        cout << "f[" << i << "]=" << f[i] << endl;
+    return 0;
+}`,
+    out:['$ g++ fib.cpp -o fib -O2', '$ ./fib', 'f[1]=1','f[2]=1','f[3]=2','f[4]=3','f[5]=5','f[6]=8','f[7]=13','f[8]=21','f[9]=34','f[10]=55'] },
+  { name:'bsearch.cpp', title:'二分查找',
+    code:`#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int a[9] = {1, 3, 5, 7, 9, 11, 13, 15, 17};
+    int x = 13, lo = 0, hi = 8;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        cout << "查找区间 [" << lo << "," << hi
+             << "] mid=" << mid << " a[mid]=" << a[mid] << endl;
+        if (a[mid] == x) { cout << "找到了！下标=" << mid; break; }
+        else if (a[mid] < x) lo = mid + 1;
+        else hi = mid - 1;
+    }
+    return 0;
+}`,
+    out:['$ g++ bsearch.cpp -o bsearch -O2', '$ ./bsearch', '查找区间 [0,8] mid=4 a[mid]=9', '查找区间 [5,8] mid=6 a[mid]=13', '找到了！下标=6', '', '9 个数中仅比较 2 次 —— 这就是 O(log n) 的威力 ⚡'] },
+  { name:'star.cpp', title:'打印星星金字塔',
+    code:`#include <iostream>
+using namespace std;
+
+int main() {
+    int n = 5;
+    for (int i = 1; i <= n; i++) {
+        for (int j = 0; j < n - i; j++) cout << " ";
+        for (int j = 0; j < 2 * i - 1; j++) cout << "*";
+        cout << endl;
+    }
+    return 0;
+}`,
+    out:['$ g++ star.cpp -o star -O2', '$ ./star', '    *', '   ***', '  *****', ' *******', '*********'] },
+];
+
+const tabs = $('#pg-tabs');
+tabs.innerHTML = DEMOS.map((d, i) => `<button class="pg-tab ${i===0?'active':''}" data-i="${i}">${d.name}</button>`).join('');
+function showDemo(i){
+  $$('.pg-tab').forEach((t, k2) => t.classList.toggle('active', k2 === i));
+  $('#pg-filename').textContent = DEMOS[i].name + ' — ' + DEMOS[i].title;
+  $('#pg-code').innerHTML = hl(DEMOS[i].code);
+  $('#pg-console').textContent = '等待运行…';
+}
+tabs.addEventListener('click', e => {
+  const t = e.target.closest('.pg-tab'); if (t) showDemo(+t.dataset.i);
+});
+let running = false;
+$('#pg-run').onclick = () => {
+  if (running) return; running = true;
+  const i = [...$$('.pg-tab')].findIndex(t => t.classList.contains('active'));
+  const d = DEMOS[i < 0 ? 0 : i];
+  const con = $('#pg-console'); con.textContent = '';
+  let k2 = 0;
+  (function next(){
+    if (k2 >= d.out.length){ running = false; return; }
+    con.textContent += (k2 ? '\n' : '') + d.out[k2++];
+    con.scrollTop = con.scrollHeight;
+    setTimeout(next, k2 <= 2 ? 500 : 300);
+  })();
+};
+showDemo(0);
+</script>
+</body>
+</html>
