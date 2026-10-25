@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>编程实战 OJ · 伦博教育C++编程</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+<main class="section page-top">
+  <h2 class="section-title">💻 编程实战 OJ <span class="title-en">ONLINE JUDGE · 1000 题</span></h2>
+  <p class="section-sub">1000 道经典编程题 · 12 大分类 · LeetCode 式在线评测：读题 → 写 C++ → 真实编译判分。卡壳了？去 <a href="solutions.html" style="color:var(--neon)">📖 题解中心 →</a></p>
+
+  <div class="gym-hud">
+    <div class="hud-item">🏆 XP <b id="oj-xp">0</b></div>
+    <div class="hud-item">✅ 已 AC <b id="oj-ac">0</b> / <span id="oj-total">0</span></div>
+    <div class="hud-item">📈 通过率 <b id="oj-rate">0%</b></div>
+    <div class="hud-bar"><div class="hud-bar-fill" id="oj-bar"></div></div>
+  </div>
+
+  <div class="oj-cats" id="oj-cats"></div>
+
+  <div class="oj-toolbar">
+    <input class="search-input" id="oj-search" placeholder="🔎 搜索题号或题名，如 p0007 / 背包 …">
+    <select id="oj-diff">
+      <option value="">全部难度</option>
+      <option value="1">⭐ 入门</option><option value="2">⭐⭐ 基础</option>
+      <option value="3">⭐⭐⭐ 提高</option><option value="4">⭐⭐⭐⭐ 竞赛</option>
+    </select>
+    <select id="oj-status">
+      <option value="">全部状态</option>
+      <option value="ac">✅ 已 AC</option>
+      <option value="todo">⬜ 未 AC</option>
+    </select>
+  </div>
+
+  <div class="oj-count" id="oj-count"></div>
+  <div class="gym-list" id="oj-list"></div>
+  <div class="pager" id="oj-pager"></div>
+</main>
+
+<footer><div class="foot-inner">
+  <div>⚡ <b>伦博教育C++编程</b> — 从零基础到 CSP-J / CSP-S 高分</div>
+  <div class="foot-motto"><code>while (alive) { keepCoding(); }</code></div>
+</div></footer>
+
+<script src="assets/js/data-courses.js"></script>
+<script src="assets/js/data-exercises.js"></script>
+<script src="assets/js/data-gen.js"></script>
+<script src="assets/js/data-kata.js"></script>
+<script src="assets/js/data-kata-gen.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+renderNav('oj.html');
+initRain();
+
+const PAGE_SIZE = 40;
+let fCat = getParam('cat') || '', fDiff = '', fStatus = '', fKw = '', page = 1;
+
+$('#oj-xp').textContent = state.xp;
+$('#oj-total').textContent = KATAS.length;
+
+function refreshHUD(){
+  const ac = KATAS.filter(k => state.done[k.id]).length;
+  $('#oj-ac').textContent = ac;
+  $('#oj-rate').textContent = Math.round(ac / KATAS.length * 1000) / 10 + '%';
+  $('#oj-bar').style.width = (ac / KATAS.length * 100) + '%';
+}
+refreshHUD();
+
+/* 分类标签（带题数与 AC 进度） */
+function renderCats(){
+  const counts = {}, acs = {};
+  KATAS.forEach(k => { counts[k.cat] = (counts[k.cat]||0)+1; if (state.done[k.id]) acs[k.cat] = (acs[k.cat]||0)+1; });
+  const all = [{id:'', name:'全部', icon:'🌐', n:KATAS.length, a:KATAS.filter(k=>state.done[k.id]).length}]
+    .concat(KATA_CATS.map(c => ({id:c.id, name:c.name, icon:c.icon, n:counts[c.id]||0, a:acs[c.id]||0})));
+  $('#oj-cats').innerHTML = all.map(c =>
+    `<button class="cat-chip ${c.id===fCat?'active':''}" data-c="${c.id}">
+      ${c.icon} ${c.name} <span class="cat-num">${c.a}/${c.n}</span>
+    </button>`).join('');
+}
+renderCats();
+
+function filtered(){
+  return KATAS.filter(k =>
+    (!fCat || k.cat === fCat) &&
+    (!fDiff || k.diff === +fDiff) &&
+    (!fStatus || (fStatus === 'ac' ? state.done[k.id] : !state.done[k.id])) &&
+    (!fKw || k.title.toLowerCase().includes(fKw) || k.id.includes(fKw))
+  );
+}
+
+const catMeta = {}; KATA_CATS.forEach(c => catMeta[c.id] = c);
+
+function renderList(){
+  const list = filtered();
+  const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  if (page > pages) page = pages;
+  const slice = list.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+  $('#oj-count').textContent = `共 ${list.length} 道题 · 第 ${page}/${pages} 页`;
+  $('#oj-list').innerHTML = slice.map(k => {
+    const done = state.done[k.id];
+    const cm = catMeta[k.cat] || {icon:'💻', name:k.cat};
+    return `<a class="ex-card ${done?'done':''}" href="problem.html?id=${k.id}">
+      <div class="ex-emoji">${cm.icon}</div>
+      <div class="ex-main">
+        <div class="ex-title"><span class="pid-tag">${k.id}</span> ${k.title}</div>
+        <div class="ex-sub">${cm.name} · ${k.tests.length} 个评测点 · 在线编译判分</div>
+      </div>
+      <div class="ex-diff">${diffStars(k.diff)}</div>
+      <div class="ex-xp">+${k.xp} XP</div>
+      <div class="ex-status">${done ? '<span style="color:var(--green);font-weight:700">AC</span>' : '🚀'}</div>
+    </a>`;
+  }).join('') || '<p style="color:var(--muted);text-align:center;padding:40px">没有符合条件的题目，换个筛选试试~</p>';
+
+  /* 分页 */
+  if (pages > 1){
+    let btns = `<button class="pager-btn" data-p="${page-1}" ${page===1?'disabled':''}>‹ 上一页</button>`;
+    const win = [];
+    for (let i = 1; i <= pages; i++) if (i===1 || i===pages || Math.abs(i-page)<=2) win.push(i);
+    let last = 0;
+    for (const i of win){ if (i - last > 1) btns += '<span class="pager-dots">…</span>'; btns += `<button class="pager-btn ${i===page?'active':''}" data-p="${i}">${i}</button>`; last = i; }
+    btns += `<button class="pager-btn" data-p="${page+1}" ${page===pages?'disabled':''}>下一页 ›</button>`;
+    $('#oj-pager').innerHTML = btns;
+  } else $('#oj-pager').innerHTML = '';
+}
+
+$('#oj-cats').addEventListener('click', e => {
+  const b = e.target.closest('.cat-chip'); if (!b) return;
+  fCat = b.dataset.c; page = 1;
+  $$('#oj-cats .cat-chip').forEach(x => x.classList.toggle('active', x.dataset.c === fCat));
+  renderList();
+});
+$('#oj-diff').onchange = e => { fDiff = e.target.value; page = 1; renderList(); };
+$('#oj-status').onchange = e => { fStatus = e.target.value; page = 1; renderList(); };
+let kwTm;
+$('#oj-search').oninput = e => { clearTimeout(kwTm); kwTm = setTimeout(() => { fKw = e.target.value.trim().toLowerCase(); page = 1; renderList(); }, 200); };
+$('#oj-pager').addEventListener('click', e => {
+  const b = e.target.closest('.pager-btn'); if (!b || b.disabled) return;
+  page = +b.dataset.p; renderList();
+  scrollTo({top: $('.oj-toolbar').offsetTop - 80, behavior:'smooth'});
+});
+renderList();
+</script>
+</body>
+</html>
